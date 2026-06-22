@@ -3,6 +3,13 @@
 	"EngineAssociation": "5.7",
 	"Category": "",
 	"Description": "",
+	"Modules": [
+		{
+			"Name": "MyVRProject",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "OpenXR",
@@ -16,6 +23,9 @@
 			"Name": "OpenXRHandTracking",
 			"Enabled": true
 		}
+	],
+	"AdditionalPluginDirectories": [
+		"MCPGameProject"
 	],
 	"TargetPlatforms": [
 		"Android",
