@@ -25,6 +25,7 @@
 #include "BlueprintActionDatabase.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
+#include "Misc/PackageName.h"
 
 // JSON Utilities
 TSharedPtr<FJsonObject> FUnrealMCPCommonUtils::CreateErrorResponse(const FString& Message)
@@ -153,8 +154,46 @@ UBlueprint* FUnrealMCPCommonUtils::FindBlueprint(const FString& BlueprintName)
 
 UBlueprint* FUnrealMCPCommonUtils::FindBlueprintByName(const FString& BlueprintName)
 {
-    FString AssetPath = TEXT("/Game/Blueprints/") + BlueprintName;
-    return LoadObject<UBlueprint>(nullptr, *AssetPath);
+    FString AssetPath = BlueprintName.TrimStartAndEnd();
+
+    if (AssetPath.IsEmpty())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FindBlueprintByName: Empty blueprint name"));
+        return nullptr;
+    }
+
+    AssetPath.ReplaceInline(TEXT("\\"), TEXT("/"));
+
+    const bool bIsFullPath = AssetPath.StartsWith(TEXT("/Game/"));
+
+    if (!bIsFullPath)
+    {
+        AssetPath = TEXT("/Game/Blueprints/") + AssetPath;
+    }
+
+    while (AssetPath.Contains(TEXT("//")))
+    {
+        AssetPath.ReplaceInline(TEXT("//"), TEXT("/"));
+    }
+
+    FString ObjectPath = AssetPath;
+
+    if (!ObjectPath.Contains(TEXT(".")))
+    {
+        FString AssetName = FPackageName::GetLongPackageAssetName(AssetPath);
+        ObjectPath = FString::Printf(TEXT("%s.%s"), *AssetPath, *AssetName);
+    }
+
+    UE_LOG(LogTemp, Display, TEXT("FindBlueprintByName: Loading blueprint from path: %s"), *ObjectPath);
+
+    UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *ObjectPath);
+
+    if (!Blueprint)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FindBlueprintByName: Failed to load blueprint: %s"), *ObjectPath);
+    }
+
+    return Blueprint;
 }
 
 UEdGraph* FUnrealMCPCommonUtils::FindOrCreateEventGraph(UBlueprint* Blueprint)
